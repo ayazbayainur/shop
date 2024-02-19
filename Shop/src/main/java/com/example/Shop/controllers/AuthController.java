@@ -1,9 +1,13 @@
 package com.example.Shop.controllers;
 
 import com.example.Shop.dto.UserDto;
+import com.example.Shop.jwt.AuthenticationRequest;
+import com.example.Shop.jwt.AuthenticationService;
+import com.example.Shop.jwt.RegisterRequest;
 import com.example.Shop.models.User;
 import com.example.Shop.services.UserService;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,12 +18,19 @@ import java.util.List;
 import java.util.Optional;
 
 @Controller
-//@RequestMapping("/auth")
+@RequestMapping("/auth")
 @AllArgsConstructor
+@Data
 public class AuthController {
 
 //    @Autowired
     private UserService userService;
+    private final AuthenticationService authenticationService;
+
+    @GetMapping("/check")
+    public String check(){
+        return "just checking the endpoint";
+    }
 
     @GetMapping("/index")
     public String home(){
@@ -51,16 +62,12 @@ public class AuthController {
     @PostMapping("register/save")
     public String registration(@ModelAttribute("user") UserDto userDto,
                                BindingResult result,
-                               Model model){
+                               Model model,  @RequestBody RegisterRequest request){
         User existingUser = userService.getUserByEmail(userDto.getEmail());
 
-        if(existingUser != null && existingUser.getEmail() != null && !existingUser.getEmail().isEmpty()){
-            result.rejectValue("email", null,
-                    "There is already an account registered with the same email");
-        }
-//        if(existingUser != null && existingUser.getUsername() != null && !existingUser.getUsername().isEmpty()){
-//            result.rejectValue("username", null,
-//                    "There is already an account registered with the same username");
+//        if(existingUser != null && existingUser.getEmail() != null && !existingUser.getEmail().isEmpty()){
+//            result.rejectValue("email", null,
+//                    "There is already an account registered with the same email");
 //        }
 
         if(result.hasErrors()){
@@ -68,7 +75,8 @@ public class AuthController {
             return "/register";
         }
 
-        userService.addUser(mapToUser(userDto));
+        authenticationService.register(request);
+//        userService.addUser(mapToUser(userDto));
         return "redirect:/register?success";
     }
 
@@ -80,7 +88,8 @@ public class AuthController {
 //    }
 
     @GetMapping("/login")
-    public String login(){
+    public String login(@RequestBody AuthenticationRequest request){
+        authenticationService.authenticate(request);
         return "login";
     }
 
